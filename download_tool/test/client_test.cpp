@@ -57,7 +57,7 @@ static bool wait_until(std::chrono::milliseconds timeout, Pred pred) {
 // ---------------------------------------------------------------------------
 static void test_download() {
   // 用法（与原有测试相同）
-  const std::string url = "http://www.xinhuanet.com/";
+  const std::string url = "http://www.xinhuanet.com/notexistfile_1234";
   const std::string save_name = "test_xinhuanet.html";  // 保存的文件名，文件会下载程序运行的路径，后期可以改成指定的绝对路径
 
   download::Worker c(url, save_name, 2);
