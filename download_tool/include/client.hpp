@@ -52,14 +52,27 @@ namespace download{
         "\r\n"
       );
 
-      std::string head = read_all(tp_fd);
+            std::string head = read_all(tp_fd);
       HttpResponse res = parse_http(head);
-      
-      // if(res.status_code != 200){
-      //   std::cerr << res.status_code << std::endl;
-      //   throw std::runtime_error("服务器返回错误");
-      //   return -1;
-      // }
+
+      // 301/302 重定向：只提示报错，不跟随
+      if(res.status_code == 301 || res.status_code == 302){
+        close_socket(tp_fd);
+        throw std::runtime_error("服务器返回重定向 " + std::to_string(res.status_code) +
+          "，Location: " + res.headers["Location"]);
+      }
+
+      // 404：网址不存在
+      if(res.status_code == 404){
+        close_socket(tp_fd);
+        throw std::runtime_error("404 Not Found，网址不存在");
+      }
+
+      // 其他非 200 状态码
+      if(res.status_code != 200){
+        close_socket(tp_fd);
+        throw std::runtime_error("服务器返回错误状态码: " + std::to_string(res.status_code));
+      }
 
       if(res.headers["Accept-Ranges"] == "bytes" ){}
       else{
