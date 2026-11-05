@@ -6,7 +6,9 @@
 namespace download {
 
   struct HttpResponse {
+    std::string version;//新增：协议版本
     int status_code;
+    std::string reason;//新增：状态描述（存储状态码对应的文本描述）
     std::unordered_map<std::string, std::string> headers;
     // std::string body;
   };
@@ -25,10 +27,11 @@ namespace download {
 
     int p1 = s.find(' ');
     int p2 = s.find(' ', p1+1);
-
+    int ed=s.find("\r\n");//新增
+    ret.version=cut(s.substr(0,p1));//截取协议版本
     ret.status_code = std::stoi(cut(s.substr(p1+1, p2-p1-1)));
-
-    int ed = s.find("\r\n");
+    ret.reason=cut(s.substr(p2+1,ed-(p2+1)));//截取存储状态码对应的文本描述
+    //int ed = s.find("\r\n");
     while(true){ 
       ed += 2;
       int p = s.find(':', ed);
