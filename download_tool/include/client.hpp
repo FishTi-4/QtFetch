@@ -7,8 +7,10 @@
 #include <string>
 #include <utility>
 #include <chrono>
+#include <memory>
 
 #include "download_class.hpp"
+#include "http_parser.hpp"
 #include "timer_wheel.hpp"
 #include "thread_pool.hpp"
 
@@ -23,9 +25,20 @@ namespace download{
     Worker(const Worker&) = delete;
     Worker& operator=(const Worker&) = delete;
 
+
+    /*
+      功能：
+        构造下载类
+      参数：
+        url: 要下载的url
+        save_path: 保存路径
+        num_thread: 线程数
+    */
     Worker(std::string url, std::string save_path, int num_thread);
 
     ~Worker();
+
+    //run调用的是底层download_tool 的run函数， 根据num_thread向线程池注册多个任务
 
     int run();
 
@@ -37,13 +50,17 @@ namespace download{
 
     int is_done();
 
+
+    //以下两个函数是注册到时间轮里面的
+    
     double get_progress();
 
     double get_speed();
 
   private:
     int file_fd;
-    download_class downloader;
+    std::unique_ptr<download_class> downloader;
+    // download_class downloader;
 
     int have_download = 0;
 
@@ -68,6 +85,20 @@ namespace download{
     Worker(std::pair<std::string, std::string> parse_res, std::string save_path, int num_thread);
 
     void update_speed_loop();
+
+    /*
+
+      负责人：
+      功能：
+        在错误码为3XX时，跟随Location(小写)跳转到对应的连接，
+        直到错误码为非3XX为止，更新response最后一次200的响应并返回最后一次跳转的真实资源链接
+      参数：
+        response:当前发生3XX错误码的响应
+      返回值
+        真实的资源链接
+    */
+    std::string Redirect(HttpParser& response);
+
 
     thread_pool work_threads;
   };

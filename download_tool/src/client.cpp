@@ -56,7 +56,7 @@ namespace download{
 
   Worker::Worker(std::pair<std::string, std::string> parse_res, std::string save_path, int num_thread)
     : file_fd(open(save_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644)),
-      downloader(parse_res.second, parse_res.first, mtx, cv, file_fd, downloaded_size),
+      // downloader(parse_res.second, parse_res.first, mtx, cv, file_fd, downloaded_size),
       work_threads(num_thread), num_thread(num_thread)
   {
     if(file_fd < 0){
@@ -67,13 +67,14 @@ namespace download{
   }
 
   Worker::~Worker() {
-    downloader.exit();
+    downloader->exit();
     exit_flag = true;
   }
 
   int Worker::run(){
 
     try{
+
       int tp_fd = find_server_socket(host, "80");
 
       send_message(tp_fd, 
@@ -84,28 +85,30 @@ namespace download{
       );
 
       std::string head = read_all(tp_fd);
-      HttpResponse res = parse_http(head);
+      HttpParser res(head);
 
-      // 301/302 重定向：只提示报错，不跟随
-      if(res.status_code == 301 || res.status_code == 302){
+      
+      if(res.status_code() / 100 == 3 ){
         close_socket(tp_fd);
-        throw std::runtime_error("服务器返回重定向 " + std::to_string(res.status_code) +
-          "，Location: " + res.headers["Location"]);
+        std::string position = Redirect(res);
+        auto redirect_addr = parse_url(position);
+        host = redirect_addr.first;
+        filename = redirect_addr.second;
       }
 
       // 404：网址不存在
-      if(res.status_code == 404){
+      if(res.status_code() == 404){
         close_socket(tp_fd);
         throw std::runtime_error("404 Not Found，网址不存在");
       }
 
       // 其他非 200 状态码
-      if(res.status_code != 200){
+      if(res.status_code() != 200){
         close_socket(tp_fd);
-        throw std::runtime_error("服务器返回错误状态码: " + std::to_string(res.status_code));
+        throw std::runtime_error("服务器返回错误状态码: " + std::to_string(res.status_code()));
       }
 
-      if(res.headers["Accept-Ranges"] == "bytes" ){}
+      if(res.get("Accept-Ranges") == "bytes" ){}
       else{
         std::cout << "服务器不支持断点续传" << std::endl;
         num_thread = 1;
@@ -118,7 +121,7 @@ namespace download{
 
       timer.add_always_timer(std::chrono::milliseconds(1000), [this](){ update_speed_loop(); } );
 
-      int content_size = stoi(res.headers["Content-Length"]);
+      int content_size = stoi(res.get("Content-Length"));
       if(content_size == 0){
         throw std::runtime_error("文件为空");
       }
@@ -131,7 +134,7 @@ namespace download{
           int end_byte = (std::min)(start_byte + block_size, content_size) - 1;
         work_threads.submit_task(
           [this, start_byte, end_byte](){
-            downloader.run(start_byte, end_byte);
+            downloader->run(start_byte, end_byte);
           }
         );
       }
@@ -145,15 +148,15 @@ namespace download{
   }
 
   void Worker::pause(){
-    downloader.pause();
+    downloader->pause();
   }
 
   void Worker::resume(){
-    downloader.resume();
+    downloader->resume();
   }
 
   void Worker::stop(){
-    downloader.exit();
+    downloader->exit();
   }
 
   int Worker::is_done(){
@@ -195,5 +198,10 @@ namespace download{
       }
     }
   }
+
+  std::string Worker::Redirect(HttpParser& response){
+    return "";
+  }
+
 
 } // namespace download

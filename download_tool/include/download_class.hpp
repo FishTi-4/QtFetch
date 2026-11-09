@@ -7,7 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 
-//download(string filename, string addr)
+
 namespace download { 
 
 /*
