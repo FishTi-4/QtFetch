@@ -1,7 +1,6 @@
 #include <iostream>
 #include "../include/client.hpp"
 
-#define DEBUG
 int main()
 {
 
