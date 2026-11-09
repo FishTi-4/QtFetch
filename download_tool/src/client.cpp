@@ -67,7 +67,7 @@ namespace download{
   }
 
   Worker::~Worker() {
-    downloader->exit();
+    if (downloader) downloader->exit();
     exit_flag = true;
   }
 
@@ -115,10 +115,6 @@ namespace download{
       } 
       close_socket(tp_fd);
 
-
-      auto tm = std::chrono::milliseconds(100);
-      std::this_thread::sleep_for(tm);
-
       timer.add_always_timer(std::chrono::milliseconds(1000), [this](){ update_speed_loop(); } );
 
       int content_size = stoi(res.get("Content-Length"));
@@ -126,6 +122,8 @@ namespace download{
         throw std::runtime_error("文件为空");
       }
       need_download_size = content_size;
+      
+      downloader = std::make_unique<download_class>(filename, host, mtx, cv, file_fd, downloaded_size);
 
       int block_size = (content_size + num_thread - 1) / num_thread;
 
@@ -148,15 +146,15 @@ namespace download{
   }
 
   void Worker::pause(){
-    downloader->pause();
+    if (downloader) downloader->pause();
   }
 
   void Worker::resume(){
-    downloader->resume();
+    if (downloader) downloader->resume();
   }
 
   void Worker::stop(){
-    downloader->exit();
+    if (downloader) downloader->exit();
   }
 
   int Worker::is_done(){
