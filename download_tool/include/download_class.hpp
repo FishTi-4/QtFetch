@@ -10,6 +10,10 @@
 //download(string filename, string addr)
 namespace download { 
 
+
+/*
+  这是前向声明，具体实现看后文
+*/
 int find_server_socket(std::string addr, std::string port);
 int send_message(int server_socket, std::string mes);
 
@@ -32,16 +36,6 @@ public:
     }
   }
 
-  // int initialize(std::string filename, std::string addr, std::string save_as_file){
-  //   close();
-  //   file_name = filename;
-  //   this->addr = addr;
-  //   this->save_as_filename = save_as_file;
-  //   done_signal = 0;
-  //   pause_signal = 1;
-  //   return 0;
-  // }
-
   int run(int start_byte, int end_byte){
       pause_signal = 0;
       int offset = start_byte;
@@ -54,7 +48,7 @@ public:
       bool header_done = false;
 
       while(1){
-          // 暂停 / 取消检查（放在 recv 之前，这样暂停才真的生效）
+
           {
               std::unique_lock<std::mutex> lk(mtx);
               cv.wait(lk, [&](){ return !pause_signal || done_signal; });
@@ -66,13 +60,13 @@ public:
               close_socket(server_fd);
               throw std::runtime_error("cannot recv");
           }
-          if(sz == 0) break;              // 连接正常关闭
+          if(sz == 0) break;
 
           buf.append(tmp, sz);
 
           if(!header_done){
               int pos = buf.find("\r\n\r\n");
-              if(pos == std::string::npos) continue;   // 头还没收全
+              if(pos == std::string::npos) continue;
               buf = buf.substr(pos + 4);
               header_done = true;
           }
@@ -85,7 +79,7 @@ public:
               }
               offset += n;
               download_history += n;
-              buf.erase(0, n);            // 只删已写出的部分，正确处理部分写
+              buf.erase(0, n);
           }
       }
 
@@ -136,7 +130,16 @@ private:
     return 0;
   }
 
-  int send_request(int start_byte, int end_byte, int fd){
+  /*
+    功能：
+      工具函数，用于发出分块请求，
+
+    参数：
+      start_byte: 起始字节
+      end_byte: 结束字节
+      fd: 目标服务器的socket
+  */
+  int send_request(int start_byte, int end_byte, int fd){       
     std::string mes = "GET /" + file_name + " HTTP/1.1\r\n" +
                       "Host: " + host + "\r\n" +
                       "Connection: close\r\n" +
@@ -145,6 +148,13 @@ private:
     send_message(fd, mes);
     return 0;
   }
+
+  /*
+    功能：
+      发起连接（根据worker内部保留的链接）
+    参数：
+      无
+  */
   int connect(){
     server_socket = find_server_socket(host, "80");
     if(server_socket < 0){
@@ -156,6 +166,14 @@ private:
 
 };
 
+  /*
+    功能：
+      通用全局工具函数，用于发送消息，封装消息一次性发不完整的情况
+
+    参数：
+      server_socket: 目标服务器的socket
+      mes: 要发送的消息
+  */
   inline int send_message(int server_socket, std::string mes){
     size_t sent = 0;
     while (sent < mes.size()){
@@ -167,7 +185,5 @@ private:
   }
 
   
-  
-
 
 } // namespace download
