@@ -54,16 +54,17 @@ namespace download{
   {
   }
 
-  Worker::Worker(std::pair<std::string, std::string> parse_res, std::string save_path, int num_thread)
+  Worker::Worker(std::tuple<std::string, std::string, std::string> parse_res, std::string save_path, int num_thread)
     : file_fd(open(save_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644)),
+      protocol(std::get<0>(parse_res)),
+      host(std::get<1>(parse_res)),
+      filename(std::get<2>(parse_res)),
       // downloader(parse_res.second, parse_res.first, mtx, cv, file_fd, downloaded_size),
       work_threads(num_thread), num_thread(num_thread)
   {
     if(file_fd < 0){
       throw std::runtime_error("无法打开保存文件: " + save_path);
     }
-    host = parse_res.first;
-    filename = parse_res.second;
   }
 
   Worker::~Worker() {
@@ -75,7 +76,8 @@ namespace download{
 
     try{
 
-      int tp_fd = find_server_socket(host, "80");
+      std::string port = (protocol == "https") ? "443" : "80";
+      int tp_fd = find_server_socket(host, port);
 
       send_message(tp_fd, 
         "HEAD /" + filename + " HTTP/1.1\r\n" +
@@ -87,13 +89,17 @@ namespace download{
       std::string head = read_all(tp_fd);
       HttpParser res(head);
 
-      
+      /*
+        3XX错误， 更新 protocol, host, filename
+      */
       if(res.status_code() / 100 == 3 ){
         close_socket(tp_fd);
         std::string position = Redirect(res);
         auto redirect_addr = parse_url(position);
-        host = redirect_addr.first;
-        filename = redirect_addr.second;
+        protocol = std::get<0>(redirect_addr);
+        host = std::get<1>(redirect_addr);
+        filename = std::get<2>(redirect_addr);
+        port = (protocol == "https") ? "443" : "80";
       }
 
       // 404：网址不存在
@@ -123,7 +129,7 @@ namespace download{
       }
       need_download_size = content_size;
       
-      downloader = std::make_unique<download_class>(filename, host, mtx, cv, file_fd, downloaded_size);
+      downloader = std::make_unique<download_class>(filename, host, port, mtx, cv, file_fd, downloaded_size);
 
       int block_size = (content_size + num_thread - 1) / num_thread;
 
@@ -169,15 +175,31 @@ namespace download{
     return speed;
   }
 
-  std::pair<std::string, std::string> Worker::parse_url(std::string url){
+  /*
+    功能：解析 url，变为 (protocol, host, filename)
+    参数：url - 待解析的 url
+    返回：(protocol, host, filename)
+  */
+  std::tuple<std::string ,std::string, std::string> Worker::parse_url(std::string url){
     int pos = url.find("://");
+    std::string protocol;
+    if(pos == std::string::npos){
+      protocol = "https";
+    }
+
+    if(pos != std::string::npos){
+      protocol = url.substr(0, pos);
+      if(protocol != "http" && protocol != "https")
+        protocol = "https";
+    }
+
     if (pos == std::string::npos) pos = 0;
     else  pos += 3;
 
     int cut = url.find("/", pos);
 
-    if(cut == std::string::npos) return {url.substr(pos), ""};
-    else return {url.substr(pos, cut - pos), url.substr(cut + 1)};
+    if(cut == std::string::npos) return {protocol, url.substr(pos), ""};
+    else return {protocol, url.substr(pos, cut - pos), url.substr(cut + 1)};
   }
 
   void Worker::update_speed_loop(){ 

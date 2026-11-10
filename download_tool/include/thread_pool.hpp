@@ -23,6 +23,15 @@ namespace download{
 
     void exit();
 
+
+    /*
+      功能：向线程池提交任务
+      参数：
+        T: 任务函数
+        args: 任务函数的参数
+      返回值
+        返回执行任务的future句柄
+    */
     template<typename T, typename... args>
     auto submit_task(T&& fn, args&&... inp)
       -> std::future<std::invoke_result_t<std::decay_t<T>, std::decay_t<args>...>>
