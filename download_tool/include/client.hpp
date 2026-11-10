@@ -6,6 +6,7 @@
 
 #include <string>
 #include <utility>
+#include <tuple>
 #include <chrono>
 #include <memory>
 
@@ -80,9 +81,15 @@ namespace download{
     std::atomic<double> speed = 0;
 
     int num_thread;
-    std::pair<std::string, std::string> parse_url(std::string url);
+    
+    /*
+      功能：把url拆分成(protocol, host, path)
+      参数：url - 要解析的url
+      返回值：(protocol, host, path)
+    */
+    std::tuple<std::string, std::string, std::string> parse_url(std::string url);
 
-    Worker(std::pair<std::string, std::string> parse_res, std::string save_path, int num_thread);
+    Worker(std::tuple<std::string, std::string, std::string> parse_res, std::string save_path, int num_thread);
 
     void update_speed_loop();
 

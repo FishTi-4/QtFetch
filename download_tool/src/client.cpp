@@ -54,7 +54,7 @@ namespace download{
   {
   }
 
-  Worker::Worker(std::pair<std::string, std::string> parse_res, std::string save_path, int num_thread)
+  Worker::Worker(std::tuple<std::string, std::string, std::string> parse_res, std::string save_path, int num_thread)
     : file_fd(open(save_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644)),
       // downloader(parse_res.second, parse_res.first, mtx, cv, file_fd, downloaded_size),
       work_threads(num_thread), num_thread(num_thread)
@@ -62,8 +62,8 @@ namespace download{
     if(file_fd < 0){
       throw std::runtime_error("无法打开保存文件: " + save_path);
     }
-    host = parse_res.first;
-    filename = parse_res.second;
+    host = std::get<1>(parse_res);
+    filename = std::get<2>(parse_res);
   }
 
   Worker::~Worker() {
@@ -92,8 +92,8 @@ namespace download{
         close_socket(tp_fd);
         std::string position = Redirect(res);
         auto redirect_addr = parse_url(position);
-        host = redirect_addr.first;
-        filename = redirect_addr.second;
+        host = std::get<1>(redirect_addr);
+        filename = std::get<2>(redirect_addr);
       }
 
       // 404：网址不存在
@@ -169,15 +169,24 @@ namespace download{
     return speed;
   }
 
-  std::pair<std::string, std::string> Worker::parse_url(std::string url){
+  /*
+    功能：解析 url，变为 (protocol, host, filename)
+    参数：url - 待解析的 url
+    返回：(protocol, host, filename)
+  */
+  std::tuple<std::string ,std::string, std::string> Worker::parse_url(std::string url){
     int pos = url.find("://");
+    std::string protocol = url.substr(0, pos);
+    if(pos == std::string::npos){
+      protocol = "https";
+    }
     if (pos == std::string::npos) pos = 0;
     else  pos += 3;
 
     int cut = url.find("/", pos);
 
-    if(cut == std::string::npos) return {url.substr(pos), ""};
-    else return {url.substr(pos, cut - pos), url.substr(cut + 1)};
+    if(cut == std::string::npos) return {protocol, url.substr(pos), ""};
+    else return {protocol, url.substr(pos, cut - pos), url.substr(cut + 1)};
   }
 
   void Worker::update_speed_loop(){ 
