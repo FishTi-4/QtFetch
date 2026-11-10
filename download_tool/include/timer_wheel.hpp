@@ -57,7 +57,7 @@ namespace download {
     std::condition_variable cv;
 
     std::vector<std::list<std::function<void()>>> wheel;
-    std::list<std::function<void()>> doing;
+    std::list<std::function<void()>> due_callbacks;
 
     void run_task();
     

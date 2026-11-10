@@ -13,15 +13,15 @@ namespace download {
 /*
   这是前向声明，具体实现看后文
 */
-int find_server_socket(std::string addr, std::string port = "80");
-int send_message(int server_socket, std::string mes);
+int find_server_socket(std::string hostname, std::string port = "80");
+int send_message(int server_socket, std::string msg);
 
 class download_class{
 public:
 
   download_class& operator=(const download_class&) = delete;
 
-  download_class(std::string filename, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history);
+  download_class(std::string path, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &downloaded_size);
 
   ~download_class();
 
@@ -47,11 +47,11 @@ private:
   int server_socket = 0;
   int file_fd = 0;
 
-  std::string file_name;
+  std::string path;
   std::string host;
   std::string port;
 
-  std::atomic<int>& download_history;
+  std::atomic<int>& downloaded_size;
 
   int close();
 
@@ -62,9 +62,9 @@ private:
     参数：
       start_byte: 起始字节
       end_byte: 结束字节
-      fd: 目标服务器的socket
+      server_fd: 目标服务器的socket
   */
-  int send_request(int start_byte, int end_byte, int fd);
+  int send_request(int start_byte, int end_byte, int server_fd);
 
   /*
     功能：
