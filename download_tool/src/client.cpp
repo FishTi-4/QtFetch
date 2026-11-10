@@ -89,7 +89,9 @@ namespace download{
       std::string head = read_all(tp_fd);
       HttpParser res(head);
 
-      
+      /*
+        3XX错误， 更新 protocol, host, filename
+      */
       if(res.status_code() / 100 == 3 ){
         close_socket(tp_fd);
         std::string position = Redirect(res);
@@ -97,6 +99,7 @@ namespace download{
         protocol = std::get<0>(redirect_addr);
         host = std::get<1>(redirect_addr);
         filename = std::get<2>(redirect_addr);
+        port = (protocol == "https") ? "443" : "80";
       }
 
       // 404：网址不存在
@@ -126,7 +129,7 @@ namespace download{
       }
       need_download_size = content_size;
       
-      downloader = std::make_unique<download_class>(filename, host, mtx, cv, file_fd, downloaded_size);
+      downloader = std::make_unique<download_class>(filename, host, port, mtx, cv, file_fd, downloaded_size);
 
       int block_size = (content_size + num_thread - 1) / num_thread;
 

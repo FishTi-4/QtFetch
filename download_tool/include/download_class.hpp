@@ -21,7 +21,7 @@ public:
 
   download_class& operator=(const download_class&) = delete;
 
-  download_class(std::string filename, std::string host, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history);
+  download_class(std::string filename, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history);
 
   ~download_class();
 
@@ -49,6 +49,7 @@ private:
 
   std::string file_name;
   std::string host;
+  std::string port;
 
   std::atomic<int>& download_history;
 

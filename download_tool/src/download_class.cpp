@@ -22,8 +22,8 @@ namespace download {
     return 0;
   }
 
-  download_class::download_class(std::string filename, std::string host, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history)
-  : host(host), file_name(filename), mtx(mtx), cv(cv), file_fd(file_fd), download_history(download_history)
+  download_class::download_class(std::string filename, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history)
+  : host(host), file_name(filename), port(port), mtx(mtx), cv(cv), file_fd(file_fd), download_history(download_history)
   {
   }
 
@@ -40,7 +40,7 @@ namespace download {
       pause_signal = 0;
       int offset = start_byte;
 
-      int server_fd = find_server_socket(host, "80");
+      int server_fd = find_server_socket(host, port);
       send_request(start_byte, end_byte, server_fd);
 
       std::string buf;
@@ -125,7 +125,7 @@ namespace download {
   }
 
   int download_class::connect(){
-    server_socket = find_server_socket(host, "80");
+    server_socket = find_server_socket(host, port);
     if(server_socket < 0){
       throw std::runtime_error("cannot connect to server");
     }
