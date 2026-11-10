@@ -34,7 +34,8 @@ if(WIN32)
   target_link_libraries(download_class PUBLIC ws2_32)
 endif()
 
-
+find_package(OpenSSL REQUIRED)
+target_link_libraries(download_class PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
 #这下面是CTest
 if(DOWNLOAD_TOOL_BUILD_TESTS)

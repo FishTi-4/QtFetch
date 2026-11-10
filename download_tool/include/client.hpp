@@ -63,14 +63,12 @@ namespace download{
     std::unique_ptr<download_class> downloader;
     // download_class downloader;
 
-    int have_download = 0;
-
     std::mutex mtx;
     std::condition_variable cv;
 
     std::string protocol;
     std::string host;
-    std::string filename;
+    std::string path;
 
     std::atomic<int> downloaded_size = 0;
     int last_download_size = 0;
@@ -90,7 +88,7 @@ namespace download{
     */
     std::tuple<std::string, std::string, std::string> parse_url(std::string url);
 
-    Worker(std::tuple<std::string, std::string, std::string> parse_res, std::string save_path, int num_thread);
+    Worker(std::tuple<std::string, std::string, std::string> parsed_url, std::string save_path, int num_thread);
 
     void update_speed_loop();
 

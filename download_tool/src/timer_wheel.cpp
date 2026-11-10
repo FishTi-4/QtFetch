@@ -47,25 +47,25 @@ namespace download {
   }
 
   void Timer_Wheel::add_timer(std::chrono::milliseconds timeout, std::function<void()> callback){
-    int cnt = (timeout + tick - std::chrono::milliseconds(1)) / tick;
-      cnt = (std::max)(1, cnt);
+    int ticks = (timeout + tick - std::chrono::milliseconds(1)) / tick;
+      ticks = (std::max)(1, ticks);
 
-    if(cnt >= slot_num)
+    if(ticks >= slot_num)
       throw std::runtime_error("timeout too long");
 
     {
       std::lock_guard<std::mutex> lock(mtx);
-      wheel[(cur_slot + cnt) % slot_num ].push_back(callback);
+      wheel[(cur_slot + ticks) % slot_num ].push_back(callback);
     }
   }
 
    
   void Timer_Wheel::add_always_timer(std::chrono::milliseconds timeout, std::function<void()> callback){
 
-    int cnt = (timeout + tick - std::chrono::milliseconds(1)) / tick;
-      cnt = (std::max)(1, cnt);
+    int ticks = (timeout + tick - std::chrono::milliseconds(1)) / tick;
+      ticks = (std::max)(1, ticks);
 
-    if(cnt >= slot_num)
+    if(ticks >= slot_num)
       throw std::runtime_error("timeout too long");
 
     auto pack = [callback, this, timeout](){
@@ -74,17 +74,17 @@ namespace download {
     };
     {
       std::lock_guard<std::mutex> lock(mtx);
-      wheel[(cur_slot + cnt) % slot_num ].push_back(pack);
+      wheel[(cur_slot + ticks) % slot_num ].push_back(pack);
     }
 
 
   }
 
   void Timer_Wheel::run_task(){ 
-    for(auto &c : doing){
-      c();
+    for(auto &callback : due_callbacks){
+      callback();
     }
-    doing.clear();
+    due_callbacks.clear();
   }
   
   void Timer_Wheel::timer_loop(){ 
@@ -95,7 +95,7 @@ namespace download {
         std::unique_lock<std::mutex> lk(mtx);
         cv.wait_for(lk, tick, [this](){ return stop_flag; });
         if(stop_flag) break;
-        swap(wheel[cur_slot], doing);
+        swap(wheel[cur_slot], due_callbacks);
       }
 
       run_task();

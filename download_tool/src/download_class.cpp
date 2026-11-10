@@ -10,20 +10,20 @@ namespace download {
 
     参数：
       server_socket: 目标服务器的socket
-      mes: 要发送的消息
+      msg: 要发送的消息
   */
-  int send_message(int server_socket, std::string mes){
+  int send_message(int server_socket, std::string msg){
     size_t sent = 0;
-    while (sent < mes.size()){
-      int n = send(server_socket, mes.c_str() + sent, mes.size() - sent, 0);
+    while (sent < msg.size()){
+      int n = send(server_socket, msg.c_str() + sent, msg.size() - sent, 0);
       if (n < 0) return -1;
       sent += n;
     }
     return 0;
   }
 
-  download_class::download_class(std::string filename, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &download_history)
-  : host(host), file_name(filename), port(port), mtx(mtx), cv(cv), file_fd(file_fd), download_history(download_history)
+  download_class::download_class(std::string path, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &downloaded_size)
+  : host(host), path(path), port(port), mtx(mtx), cv(cv), file_fd(file_fd), downloaded_size(downloaded_size)
   {
   }
 
@@ -78,7 +78,7 @@ namespace download {
                   throw std::runtime_error("cannot write");
               }
               offset += n;
-              download_history += n;
+              downloaded_size += n;
               buf.erase(0, n);
           }
       }
@@ -114,13 +114,13 @@ namespace download {
     return 0;
   }
 
-  int download_class::send_request(int start_byte, int end_byte, int fd){       
-    std::string mes = "GET /" + file_name + " HTTP/1.1\r\n" +
+  int download_class::send_request(int start_byte, int end_byte, int server_fd){       
+    std::string msg = "GET /" + path + " HTTP/1.1\r\n" +
                       "Host: " + host + "\r\n" +
                       "Connection: close\r\n" +
                       "Range: bytes=" + std::to_string(start_byte) + "-" + std::to_string(end_byte) + "\r\n" +
                       "\r\n";
-    send_message(fd, mes);
+    send_message(server_fd, msg);
     return 0;
   }
 

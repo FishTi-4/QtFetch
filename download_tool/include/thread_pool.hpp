@@ -60,8 +60,7 @@ namespace download{
 
     void event_loop();
 
-    int stop_sign = 0;
-    int exit_sign = 0;
+    int stop_flag = 0;
     int num_thread;
     
 

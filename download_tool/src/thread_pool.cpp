@@ -15,8 +15,7 @@ namespace download{
   void thread_pool::exit(){
     {
       std::lock_guard<std::mutex> lock(mtx);
-      this->stop_sign = 1;
-      this->exit_sign = 1;
+      this->stop_flag = 1;
     }
     cv.notify_all();
     for(auto& t : threads) t.join();
@@ -31,9 +30,9 @@ namespace download{
       {
 
         std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, [this]() { return (!stop_sign && !tasks.empty()) || stop_sign;  });
+        cv.wait(lock, [this]() { return (!stop_flag && !tasks.empty()) || stop_flag;  });
 
-        if(stop_sign || tasks.empty() ) return;
+        if(stop_flag || tasks.empty() ) return;
 
         task = std::move(tasks.front());
         tasks.pop();
