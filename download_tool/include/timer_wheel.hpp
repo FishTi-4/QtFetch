@@ -26,8 +26,21 @@ namespace download {
 
     void start();
 
+
+    /*
+      功能：向定时器中添加一个定时任务
+      参数：
+        timeout: 定时器时间
+        callback: 定时器到期时调用的函数
+    */
     void add_timer(std::chrono::milliseconds timeout, std::function<void()> callback);
 
+    /*
+      功能：对add_timer的封装，向定时器添加一个重复执行的定时任务
+      参数：
+        timeout: 定时器时间
+        callback: 定时器到期时调用的函数
+    */
     void add_always_timer(std::chrono::milliseconds timeout, std::function<void()> callback);
 
   private:

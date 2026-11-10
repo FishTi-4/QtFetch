@@ -34,6 +34,9 @@ if(WIN32)
   target_link_libraries(download_class PUBLIC ws2_32)
 endif()
 
+
+
+#这下面是CTest
 if(DOWNLOAD_TOOL_BUILD_TESTS)
 
   include (CTest)
@@ -53,6 +56,10 @@ if(DOWNLOAD_TOOL_BUILD_TESTS)
   add_executable(find_socket_test ./test/find_socket_test.cpp)
   target_link_libraries(find_socket_test download_class)
 
+  #在这加一个可执行文件，并连接download_class库
+  
+
+  #在这写上添加的可执行文件名字
   set(test_name test_find_servet test_client test_thread test_timer_wheel find_socket_test)
 
   foreach(t IN LISTS test_name)
