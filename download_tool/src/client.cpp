@@ -56,14 +56,15 @@ namespace download{
 
   Worker::Worker(std::tuple<std::string, std::string, std::string> parse_res, std::string save_path, int num_thread)
     : file_fd(open(save_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644)),
+      protocol(std::get<0>(parse_res)),
+      host(std::get<1>(parse_res)),
+      filename(std::get<2>(parse_res)),
       // downloader(parse_res.second, parse_res.first, mtx, cv, file_fd, downloaded_size),
       work_threads(num_thread), num_thread(num_thread)
   {
     if(file_fd < 0){
       throw std::runtime_error("无法打开保存文件: " + save_path);
     }
-    host = std::get<1>(parse_res);
-    filename = std::get<2>(parse_res);
   }
 
   Worker::~Worker() {
@@ -75,7 +76,8 @@ namespace download{
 
     try{
 
-      int tp_fd = find_server_socket(host, "80");
+      std::string port = (protocol == "https") ? "443" : "80";
+      int tp_fd = find_server_socket(host, port);
 
       send_message(tp_fd, 
         "HEAD /" + filename + " HTTP/1.1\r\n" +
@@ -92,6 +94,7 @@ namespace download{
         close_socket(tp_fd);
         std::string position = Redirect(res);
         auto redirect_addr = parse_url(position);
+        protocol = std::get<0>(redirect_addr);
         host = std::get<1>(redirect_addr);
         filename = std::get<2>(redirect_addr);
       }
@@ -176,10 +179,17 @@ namespace download{
   */
   std::tuple<std::string ,std::string, std::string> Worker::parse_url(std::string url){
     int pos = url.find("://");
-    std::string protocol = url.substr(0, pos);
+    std::string protocol;
     if(pos == std::string::npos){
       protocol = "https";
     }
+
+    if(pos != std::string::npos){
+      protocol = url.substr(0, pos);
+      if(protocol != "http" && protocol != "https")
+        protocol = "https";
+    }
+
     if (pos == std::string::npos) pos = 0;
     else  pos += 3;
 

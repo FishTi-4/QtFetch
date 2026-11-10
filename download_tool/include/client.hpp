@@ -68,6 +68,7 @@ namespace download{
     std::mutex mtx;
     std::condition_variable cv;
 
+    std::string protocol;
     std::string host;
     std::string filename;
 
