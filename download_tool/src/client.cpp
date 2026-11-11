@@ -219,7 +219,49 @@ namespace download{
   }
 
   std::string Worker::Redirect(HttpParser& response){
-    return "";
+    const int MAX_REDIRECTS = 5;
+    std::string current_protocol=protocol;
+    std::string current_host=host;
+    std::string current_path=path;
+    std::string current_url = current_protocol + "://" + current_host + "/" + current_path;
+    for(int i =0 ;i < MAX_REDIRECTS; i++){
+      std::string location = response.get("Location");
+      if(location.empty())
+        break;
+      if(location.find("http://")==0||location.find("https://")==0)
+        current_url=location;
+      else{
+        if(location[0]=='/')
+          current_url=current_protocol+"://"+current_host+location;
+        else
+          current_url=current_protocol+"://"+current_host+"/"+location;
+      }
+      auto parsed=parse_url(current_url);
+      current_protocol=std::get<0>(parsed);
+      current_host=std::get<1>(parsed);
+      current_path=std::get<2>(parsed);
+      std::string port = (current_protocol == "https") ? "443" : "80";
+      int server_fd = find_server_socket(current_host, port);
+      if(server_fd<0)
+        throw std::runtime_error("无法连接到服务器");
+      send_message(server_fd,
+        "HEAD /" + current_path + " HTTP/1.1\r\n" +
+        "Host: " + current_host + "\r\n" +
+        "Connection: close\r\n" +
+        "\r\n"
+      );
+      std::string head = read_all(server_fd);
+      close_socket(server_fd);
+      if(head.empty())
+        throw std::runtime_error("无法获取重定向后的响应");
+      response.~HttpParser();
+      new(&response) HttpParser(head);
+      if(response.status_code()==301||response.status_code()==302||response.status_code()==303||response.status_code()==307||response.status_code()==308)
+        continue;
+      else
+        break;
+    }
+    return current_url;
   }
 
 
