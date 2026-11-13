@@ -124,15 +124,9 @@ namespace download {
     参数：buf 数据缓冲区、n 数据长度
     返回值：发送字节数
   */
-  int tcp_connection::send(const char* buf, size_t n) {
-    size_t total_sent=0;
-    while(total_sent<n){
+  int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
       int ret=::send(socket_fd,buf+total_sent,n-total_sent,0);
-      if(ret<=0)
-        return -1;
-      total_sent+=ret;
-    }
-    return static_cast<int>(total_sent);
+      return rest;
   }
 
   /*
@@ -144,7 +138,7 @@ namespace download {
   int tcp_connection::recv(char* buf, size_t n) {
     int ret=::recv(socket_fd,buf,n,0);
     if(ret<=0){
-    return 0;
+      return 0;
     }
     return ret;
   }
