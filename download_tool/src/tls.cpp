@@ -1,5 +1,6 @@
 #include "tls.hpp"
-
+#include <stdexcept>     // 为了 std::runtime_error
+#include "platform.hpp"  // 为了 close_socket
 namespace download {
 
   /*
@@ -96,50 +97,63 @@ namespace download {
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：建立 TCP 连接
     参数：socket_fd 套接字
     返回值：无
   */
-  tcp_connection::tcp_connection(int socket_fd) {
+  tcp_connection::tcp_connection(int socket_fd):socket_fd(socket_fd) {
+    if(this->socket_fd<0){
+      throw std::runtime_error("Invalid socket for TCP connection");
+    }
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：释放 TCP 连接资源
     参数：无
     返回值：无
   */
   tcp_connection::~tcp_connection() {
+    close_connection();
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：通过 TCP 发送数据
     参数：buf 数据缓冲区、n 数据长度
     返回值：发送字节数
   */
-  int tcp_connection::send(const char* buf, size_t n) {
-    return 0;
+  int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
+      int ret=::send(socket_fd,buf+total_sent,n-total_sent,0);
+      return rest;
   }
 
   /*
-    负责人：
+    负责人：youger-ing
     功能：通过 TCP 接收数据
     参数：buf 数据缓冲区、n 缓冲区大小
     返回值：接收字节数
   */
   int tcp_connection::recv(char* buf, size_t n) {
-    return 0;
+    int ret=::recv(socket_fd,buf,n,0);
+    if(ret<=0){
+      return 0;
+    }
+    return ret;
   }
 
   /*
-    负责人：
+    负责人：youger-ing
     功能：关闭 TCP 连接
     参数：无
     返回值：无
   */
   void tcp_connection::close_connection() {
+    if(socket_fd>=0) {
+      close_socket(socket_fd);
+      socket_fd=-1;
+    }
   }
 
 } // namespace download
