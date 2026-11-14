@@ -125,7 +125,7 @@ namespace download {
     返回值：发送字节数
   */
   int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
-      int ret=::send(socket_fd,buf+total_sent,n-total_sent,0);
+      int ret=::send(socket_fd,buf,n,0);
       return rest;
   }
 
