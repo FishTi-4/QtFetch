@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <openssl/ossl_typ.h>
 
 namespace download {
@@ -27,6 +28,8 @@ public:
   virtual int  send(const char* buf, size_t n) = 0;
   virtual int  recv(char* buf, size_t n)       = 0;
   virtual void close_connection()              = 0;
+
+  static int find_server_socket(std::string hostname, std::string port = "80");
 
   connection(const connection&) = delete;
   connection& operator=(const connection&) = delete;

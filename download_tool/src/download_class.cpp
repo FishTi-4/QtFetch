@@ -1,4 +1,5 @@
 #include "download_class.hpp"
+#include "tls.hpp"
 
 #include <stdexcept>
 
@@ -40,7 +41,7 @@ namespace download {
       pause_signal = 0;
       int offset = start_byte;
 
-      int server_fd = find_server_socket(host, port);
+      int server_fd = connection::find_server_socket(host, port);
       send_request(start_byte, end_byte, server_fd);
 
       std::string buf;
@@ -125,7 +126,7 @@ namespace download {
   }
 
   int download_class::connect(){
-    server_socket = find_server_socket(host, port);
+    server_socket = connection::find_server_socket(host, port);
     if(server_socket < 0){
       throw std::runtime_error("cannot connect to server");
     }
