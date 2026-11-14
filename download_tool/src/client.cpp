@@ -23,32 +23,6 @@ namespace download{
     return std::move(buf);
   }
 
-  int find_server_socket(std::string hostname, std::string port){
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket < 0){
-      std::cout << "Error opening socket" << std::endl;
-      return -1;
-    }
-    addrinfo hints {};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-  
-    addrinfo *server_info;
-    int ret = getaddrinfo(hostname.c_str(), port.c_str(), &hints, &server_info);
-    if (ret != 0 || server_info == nullptr){
-      std::cout << "Error getaddrinfo: " << gai_strerror(ret) << std::endl;
-      return -1;
-    }
-    if (connect(server_socket, server_info->ai_addr, server_info->ai_addrlen) < 0){
-      std::cout << "Error connecting" << std::endl;
-      freeaddrinfo(server_info);
-      return -1;
-    }
-
-    freeaddrinfo(server_info);
-    return server_socket;
-  }
-
   Worker::Worker(std::string url, std::string save_path, int num_thread) : 
     Worker(parse_url(url), std::move(save_path), num_thread)
   {
@@ -76,7 +50,7 @@ namespace download{
     try{
 
       std::string port = (protocol == "https") ? "443" : "80";
-      int server_fd = find_server_socket(host, port);
+      int server_fd = connection::find_server_socket(host, port);
 
       send_message(server_fd, 
         "HEAD /" + path + " HTTP/1.1\r\n" +
@@ -241,7 +215,7 @@ namespace download{
       current_host=std::get<1>(parsed);
       current_path=std::get<2>(parsed);
       std::string port = (current_protocol == "https") ? "443" : "80";
-      int server_fd = find_server_socket(current_host, port);
+      int server_fd = connection::find_server_socket(current_host, port);
       if(server_fd<0)
         throw std::runtime_error("无法连接到服务器");
       send_message(server_fd,

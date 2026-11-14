@@ -13,7 +13,6 @@ namespace download {
 /*
   这是前向声明，具体实现看后文
 */
-int find_server_socket(std::string hostname, std::string port = "80");
 int send_message(int server_socket, std::string msg);
 
 class download_class{
