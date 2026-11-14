@@ -41,7 +41,7 @@ protected:
 class tls_connection : public connection {
 public:
 
-  tls_connection(int socket_fd, SSL_CTX* ctx, const char* host);
+  tls_connection(const std::string&host, const std::string&port,SSL_CTX* ctx);
   ~tls_connection() override;
 
   int  send(const char* buf, size_t n) override;
@@ -49,15 +49,16 @@ public:
   void close_connection()              override;
 
 private:
-  SSL* ssl;
-  int  socket_fd;
+  SSL* ssl=nullptr;
+  int  socket_fd=-1;
+  std::string host_;
 };
 
 
 
 class tcp_connection : public connection {
 public:
-  explicit tcp_connection(int socket_fd);
+  explicit tcp_connection(const std::string&host, const std::string&port);
   ~tcp_connection() override;
 
   int  send(const char* buf, size_t n) override;
@@ -65,7 +66,7 @@ public:
   void close_connection()              override;
 
 private:
-  int socket_fd;
+  int socket_fd=-1;
 };
 
 
