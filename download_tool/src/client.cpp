@@ -102,7 +102,12 @@ namespace download{
       }
       need_download_size = content_size;
       
+      if(protocol == "https"){
+        ctx_manager = std::make_unique<SSL_CTX_manager>();
+      }
+      
       downloader = std::make_unique<download_class>(path, host, port, mtx, cv, file_fd, downloaded_size);
+      downloader->set_protocol(protocol, (protocol == "https" ? ctx_manager->get_ctx() : nullptr));
 
       int block_size = (content_size + num_thread - 1) / num_thread;
 

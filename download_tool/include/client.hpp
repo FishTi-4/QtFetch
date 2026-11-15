@@ -58,7 +58,7 @@ namespace download{
     double get_progress();
 
     double get_speed();
-    SSL_CTX_manager ctx_manager;
+    std::unique_ptr<SSL_CTX_manager> ctx_manager;
 
   private:
     int file_fd;
