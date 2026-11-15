@@ -87,7 +87,7 @@ namespace download {
     参数：socket_fd 套接字、ctx SSL 上下文、host 主机名
     返回值：无
   */
-  tls_connection::tls_connection(int socket_fd, SSL_CTX* ctx, const char* host) {
+  tls_connection::tls_connection(const std::string& host, const std::string& port, SSL_CTX* ctx) {
   }
 
   /*
