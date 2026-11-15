@@ -6,6 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include "tls.hpp"
 
 
 namespace download { 
@@ -34,6 +35,7 @@ public:
 
   void exit();
   
+  void set_protocol(std::string protocol, SSL_CTX* ctx);
 
 private:
 
@@ -51,6 +53,9 @@ private:
   std::string port;
 
   std::atomic<int>& downloaded_size;
+
+  std::string protocol;
+  SSL_CTX* ctx = nullptr;
 
   int close();
 
