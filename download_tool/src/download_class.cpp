@@ -23,6 +23,21 @@ namespace download {
     return 0;
   }
 
+  /*
+    功能：
+      裸 socket 版本的 send_message，client.cpp 仍在使用，
+      与 connection* 版本重载共存
+  */
+  int send_message(int server_socket, std::string msg){
+    size_t sent = 0;
+    while (sent < msg.size()){
+      int n = ::send(server_socket, msg.c_str() + sent, msg.size() - sent, 0);
+      if (n <= 0) return -1;
+      sent += n;
+    }
+    return 0;
+  }
+
   download_class::download_class(std::string path, std::string host, std::string port, std::mutex &mtx, std::condition_variable &cv, int file_fd, std::atomic<int> &downloaded_size)
   : host(host), path(path), port(port), mtx(mtx), cv(cv), file_fd(file_fd), downloaded_size(downloaded_size)
   {

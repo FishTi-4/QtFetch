@@ -158,7 +158,7 @@ namespace download {
   */
   int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
       // int ret=::send(socket_fd,buf+total_sent,n-total_sent,0);
-      // return rest;
+      return 0;
   }
 
   /*
