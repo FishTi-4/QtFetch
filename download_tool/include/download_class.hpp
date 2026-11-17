@@ -6,6 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include "tls.hpp"
 
 
 namespace download { 
@@ -13,7 +14,6 @@ namespace download {
 /*
   这是前向声明，具体实现看后文
 */
-int find_server_socket(std::string hostname, std::string port = "80");
 int send_message(int server_socket, std::string msg);
 
 class download_class{
@@ -35,6 +35,7 @@ public:
 
   void exit();
   
+  void set_protocol(std::string protocol, SSL_CTX* ctx);
 
 private:
 
@@ -52,6 +53,9 @@ private:
   std::string port;
 
   std::atomic<int>& downloaded_size;
+
+  std::string protocol;
+  SSL_CTX* ctx = nullptr;
 
   int close();
 
