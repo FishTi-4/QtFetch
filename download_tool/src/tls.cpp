@@ -53,9 +53,8 @@ namespace download {
       return nullptr;
     }
     if(SSL_CTX_set_default_verify_paths(new_ctx) != 1){
-      std::cerr << "Failed to load default verify paths" << std::endl;
       SSL_CTX_free(new_ctx);
-      return nullptr;
+      throw std::runtime_error("Failed to load default verify paths");
     }
     SSL_CTX_set_verify(new_ctx, SSL_VERIFY_PEER, nullptr);
     return new_ctx;
