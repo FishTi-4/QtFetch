@@ -87,7 +87,7 @@ namespace download {
     参数：socket_fd 套接字、ctx SSL 上下文、host 主机名
     返回值：无
   */
-  tls_connection::tls_connection(int socket_fd, SSL_CTX* ctx, const char* host) {
+  tls_connection::tls_connection(const std::string& host, const std::string& port, SSL_CTX* ctx) {
   }
 
   /*
@@ -131,12 +131,13 @@ namespace download {
   /*
     负责人：younger-ing
     功能：建立 TCP 连接
-    参数：socket_fd 套接字
+    参数：host主机名，port端口号
     返回值：无
   */
-  tcp_connection::tcp_connection(int socket_fd):socket_fd(socket_fd) {
-    if(this->socket_fd<0){
-      throw std::runtime_error("Invalid socket for TCP connection");
+  tcp_connection::tcp_connection(const std::string& host, const std::string& port) {
+    socket_fd = connection::find_server_socket(host, port);
+    if(socket_fd < 0) {
+      throw std::runtime_error("TCP connection failed to " + host + ":" + port);
     }
   }
 
@@ -157,8 +158,15 @@ namespace download {
     返回值：发送字节数
   */
   int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
-      // int ret=::send(socket_fd,buf+total_sent,n-total_sent,0);
-      return 0;
+      return ::send(socket_fd, buf, n, 0);
+  }
+
+  int  tcp_connection::send(const char* buf, size_t n, int flag){
+    return ::send(socket_fd, buf, n, flag);
+  }
+  
+  int  tcp_connection::send(int _, const char* buf, size_t n, int flag){
+    return ::send(socket_fd, buf, n, flag);
   }
 
   /*
