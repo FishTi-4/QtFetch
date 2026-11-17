@@ -2,6 +2,7 @@
 #include <stdexcept>     // 为了 std::runtime_error
 #include <iostream>
 #include "platform.hpp"  // 为了 close_socket
+#include <openssl/ssl.h>
 namespace download {
 
   /*
@@ -11,6 +12,10 @@ namespace download {
     返回值：无
   */
   SSL_CTX_manager::SSL_CTX_manager() {
+    ctx = create_ctx();
+    if (ctx==nullptr) {
+      throw std::runtime_error("Failed to create SSL_CTX");
+    }
   }
 
   /*
@@ -20,6 +25,10 @@ namespace download {
     返回值：无
   */
   SSL_CTX_manager::~SSL_CTX_manager() {
+    if(ctx!=nullptr) {
+      SSL_CTX_free(ctx);
+      ctx = nullptr;
+    }
   }
 
   /*
@@ -29,7 +38,7 @@ namespace download {
     返回值：SSL_CTX* 上下文指针
   */
   SSL_CTX* SSL_CTX_manager::get_ctx() noexcept {
-    return nullptr;
+    return ctx;
   }
 
   /*
@@ -39,7 +48,18 @@ namespace download {
     返回值：SSL_CTX* 上下文指针
   */
   SSL_CTX* SSL_CTX_manager::create_ctx() {
-    return nullptr;
+    SSL_CTX* new_ctx = SSL_CTX_new(TLS_client_method());
+    if (new_ctx == nullptr){
+      return nullptr;
+    }
+    if(SSL_CTX_set_default_verify_paths(new_ctx) != 1){
+      std::cerr << "Failed to load default verify paths" << std::endl;
+      SSL_CTX_free(new_ctx);
+      return nullptr;
+    }
+    SSL_CTX_set_verify(new_ctx, SSL_VERIFY_PEER, nullptr);
+    return new_ctx;
+
   }
 
   /*
