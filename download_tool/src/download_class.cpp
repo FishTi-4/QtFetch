@@ -17,7 +17,7 @@ namespace download {
     size_t sent = 0;
     while (sent < msg.size()){
       int n = conn->send(msg.c_str() + sent, msg.size() - sent);
-      if (n < 0) return -1;
+      if (n <= 0) return -1;
       sent += n;
     }
     return 0;
@@ -58,8 +58,8 @@ namespace download {
 
       //int server_fd = connection::find_server_socket(host, port);
       connection* conn;
-      if(protocol == "https") conn = new tls_connection(0, ctx, "443");
-      else conn = new tcp_connection(0);
+      if(protocol == "https") conn = new tls_connection(host, "443", ctx);
+      else conn = new tcp_connection(host, "80");
       send_request(start_byte, end_byte, conn);
 
       std::string buf;
@@ -89,7 +89,7 @@ namespace download {
               header_done = true;
           }
 
-          while(offset < end_byte){
+          while(offset <= end_byte && !buf.empty()){
               int n = pwrite_at(file_fd, buf.data(), buf.size(), offset);
               if(n <= 0){
                 
@@ -102,7 +102,7 @@ namespace download {
               downloaded_size += n;
               buf.erase(0, n);
           }
-          if(offset >= end_byte)  break;
+          if(offset > end_byte)  break;
       }
 
       delete conn;
