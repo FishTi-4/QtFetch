@@ -89,16 +89,20 @@ namespace download {
               header_done = true;
           }
 
-          while(!buf.empty()){
+          while(offset < end_byte){
               int n = pwrite_at(file_fd, buf.data(), buf.size(), offset);
               if(n <= 0){
-                  delete conn;
-                  throw std::runtime_error("cannot write");
+                
+                if(errno == EINTR || errno == EAGAIN) continue;
+
+                delete conn;
+                throw std::runtime_error("cannot write");
               }
               offset += n;
               downloaded_size += n;
               buf.erase(0, n);
           }
+          if(offset >= end_byte)  break;
       }
 
       delete conn;
