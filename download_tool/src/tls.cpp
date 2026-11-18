@@ -104,10 +104,9 @@ namespace download {
     SSL_set_tlsext_host_name(ssl, host_.c_str());//绑定socket
     int ret = SSL_connect(ssl);
     if (ret != 1) {
-      ERR_print_errors_fp(stderr); // 打印握手失败原因
       SSL_free(ssl);
       close_socket(socket_fd);
-      throw std::runtime_error("SSL/TLS handshake failed");
+      throw std::runtime_error("SSL/TLS handshake failed for host: " +host_);//直接抛出异常
     }//执行TLS握手
   }
 
