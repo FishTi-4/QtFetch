@@ -3,6 +3,7 @@
 #include <iostream>
 #include "platform.hpp"  // 为了 close_socket
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 namespace download {
 
   /*
@@ -101,50 +102,83 @@ namespace download {
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：建立 TLS 连接
-    参数：socket_fd 套接字、ctx SSL 上下文、host 主机名
+    参数：hostname 主机名、port 端口、ctx SSL 上下文、host 主机名
     返回值：无
   */
-  tls_connection::tls_connection(const std::string& host, const std::string& port, SSL_CTX* ctx) {
+  tls_connection::tls_connection(const std::string& host, const std::string& port, SSL_CTX* ctx)
+    : ssl(nullptr), socket_fd(-1), host_(host) {
+      socket_fd = connection::find_server_socket(host_, port);
+      if (socket_fd < 0) {
+        throw std::runtime_error("TCP Connection Failed for TLS: " + host + ":" + port);
+    }//建立TCP连接
+    ssl = SSL_new(ctx);
+    if (!ssl) {
+      close_socket(socket_fd);
+      throw std::runtime_error("Failed to create SSL object");
+    }//创建SSL对象
+    SSL_set_fd(ssl, socket_fd);
+    SSL_set_tlsext_host_name(ssl, host_.c_str());//绑定socket
+    int ret = SSL_connect(ssl);
+    if (ret != 1) {
+      SSL_free(ssl);
+      close_socket(socket_fd);
+      throw std::runtime_error("SSL/TLS handshake failed for host: " +host_);//直接抛出异常
+    }//执行TLS握手
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：释放 TLS 连接资源
     参数：无
     返回值：无
   */
   tls_connection::~tls_connection() {
+    close_connection();
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：通过 TLS 发送数据
     参数：buf 数据缓冲区、n 数据长度
     返回值：发送字节数
   */
   int tls_connection::send(const char* buf, size_t n) {
-    return 0;
+    if(!ssl)
+      return -1;
+    return SSL_write(ssl, buf, static_cast<int>(n));
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：通过 TLS 接收数据
     参数：buf 数据缓冲区、n 缓冲区大小
     返回值：接收字节数
   */
   int tls_connection::recv(char* buf, size_t n) {
-    return 0;
+    if(!ssl)
+      return 0;
+    int ret = SSL_read(ssl, buf, static_cast<int>(n));
+    return ret > 0 ? ret : 0;
   }
 
   /*
-    负责人：
+    负责人：younger-ing
     功能：关闭 TLS 连接
     参数：无
     返回值：无
   */
   void tls_connection::close_connection() {
+    if(ssl) {
+      SSL_shutdown(ssl);
+      SSL_free(ssl);
+      ssl = nullptr;
+    }//安全关闭SSL
+    if (socket_fd >= 0) {
+      close_socket(socket_fd);
+      socket_fd = -1;
+    }//关闭Socket
   }
 
   /*
