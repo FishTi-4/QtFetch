@@ -13,11 +13,26 @@ namespace download {
       server_socket: 目标服务器的socket
       msg: 要发送的消息
   */
+  int send_message(connection* conn, std::string msg){
+    size_t sent = 0;
+    while (sent < msg.size()){
+      int n = conn->send(msg.c_str() + sent, msg.size() - sent);
+      if (n <= 0) return -1;
+      sent += n;
+    }
+    return 0;
+  }
+
+  /*
+    功能：
+      裸 socket 版本的 send_message，client.cpp 仍在使用，
+      与 connection* 版本重载共存
+  */
   int send_message(int server_socket, std::string msg){
     size_t sent = 0;
     while (sent < msg.size()){
-      int n = send(server_socket, msg.c_str() + sent, msg.size() - sent, 0);
-      if (n < 0) return -1;
+      int n = ::send(server_socket, msg.c_str() + sent, msg.size() - sent, 0);
+      if (n <= 0) return -1;
       sent += n;
     }
     return 0;
@@ -41,8 +56,11 @@ namespace download {
       pause_signal = 0;
       int offset = start_byte;
 
-      int server_fd = connection::find_server_socket(host, port);
-      send_request(start_byte, end_byte, server_fd);
+      //int server_fd = connection::find_server_socket(host, port);
+      connection* conn;
+      if(protocol == "https") conn = new tls_connection(host, "443", ctx);
+      else conn = new tcp_connection(host, "80");
+      send_request(start_byte, end_byte, conn);
 
       std::string buf;
       char tmp[4096];
@@ -55,10 +73,9 @@ namespace download {
               cv.wait(lk, [&](){ return !pause_signal || done_signal; });
           }
           if(done_signal) break;
-
-          int sz = recv(server_fd, tmp, sizeof(tmp), 0);
+          int sz = conn->recv(tmp, sizeof(tmp));
           if(sz < 0){
-              close_socket(server_fd);
+              delete conn;
               throw std::runtime_error("cannot recv");
           }
           if(sz == 0) break;
@@ -72,19 +89,23 @@ namespace download {
               header_done = true;
           }
 
-          while(!buf.empty()){
+          while(offset <= end_byte && !buf.empty()){
               int n = pwrite_at(file_fd, buf.data(), buf.size(), offset);
               if(n <= 0){
-                  close_socket(server_fd);
-                  throw std::runtime_error("cannot write");
+                
+                if(errno == EINTR || errno == EAGAIN) continue;
+
+                delete conn;
+                throw std::runtime_error("cannot write");
               }
               offset += n;
               downloaded_size += n;
               buf.erase(0, n);
           }
+          if(offset > end_byte)  break;
       }
 
-      close_socket(server_fd);
+      delete conn;
       return 0;
   }
   
@@ -115,13 +136,13 @@ namespace download {
     return 0;
   }
 
-  int download_class::send_request(int start_byte, int end_byte, int server_fd){       
+  int download_class::send_request(int start_byte, int end_byte, connection* conn){       
     std::string msg = "GET /" + path + " HTTP/1.1\r\n" +
                       "Host: " + host + "\r\n" +
                       "Connection: close\r\n" +
                       "Range: bytes=" + std::to_string(start_byte) + "-" + std::to_string(end_byte) + "\r\n" +
                       "\r\n";
-    send_message(server_fd, msg);
+    send_message(conn, msg);
     return 0;
   }
 

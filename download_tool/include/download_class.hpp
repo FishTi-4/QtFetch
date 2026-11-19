@@ -15,6 +15,7 @@ namespace download {
   这是前向声明，具体实现看后文
 */
 int send_message(int server_socket, std::string msg);
+int send_message(connection* conn, std::string msg);
 
 class download_class{
 public:
@@ -68,7 +69,7 @@ private:
       end_byte: 结束字节
       server_fd: 目标服务器的socket
   */
-  int send_request(int start_byte, int end_byte, int server_fd);
+  int send_request(int start_byte, int end_byte, connection* conn);
 
   /*
     功能：
