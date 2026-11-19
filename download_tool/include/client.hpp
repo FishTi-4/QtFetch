@@ -21,6 +21,7 @@ namespace download{
   extern Timer_Wheel timer;
 
   std::string read_all(int);
+  std::string read_all(connection& conn);
 
   class Worker{
   public:

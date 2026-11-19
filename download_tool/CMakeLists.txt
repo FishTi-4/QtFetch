@@ -57,6 +57,9 @@ if(DOWNLOAD_TOOL_BUILD_TESTS)
   add_executable(find_socket_test ./test/find_socket_test.cpp)
   target_link_libraries(find_socket_test download_class)
 
+  add_executable(test_tls ./test/tls_test.cpp)
+  target_link_libraries(test_tls download_class)
+
   #在这加一个可执行文件，并连接download_class库
   
 
