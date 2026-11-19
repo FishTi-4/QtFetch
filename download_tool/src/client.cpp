@@ -23,6 +23,21 @@ namespace download{
     return std::move(buf);
   }
 
+  std::string read_all(connection& conn){
+
+    std::string buf;
+    char tmp[1024];
+
+    while(true){ 
+      int ret = conn.recv(tmp, 1024);
+      if (ret <= 0) break;
+      buf += std::string(tmp, ret);
+    }
+
+    return std::move(buf);
+
+  }
+
   Worker::Worker(std::string url, std::string save_path, int num_thread) : 
     Worker(parse_url(url), std::move(save_path), num_thread)
   {
@@ -50,23 +65,32 @@ namespace download{
     try{
 
       std::string port = (protocol == "https") ? "443" : "80";
-      int server_fd = connection::find_server_socket(host, port);
 
-      send_message(server_fd, 
+      connection* server;
+
+      if(protocol == "https"){
+        ctx_manager = std::make_unique<SSL_CTX_manager>();
+        server = new tls_connection(host, port, ctx_manager->get_ctx());
+      }
+      else{
+        server = new tcp_connection(host, port);
+      }
+
+      send_message(server, 
         "HEAD /" + path + " HTTP/1.1\r\n" +
         "Host: " + host + "\r\n" +
         "Connection: close\r\n" +
         "\r\n"
       );
 
-      std::string head = read_all(server_fd);
+      std::string head = read_all(*server);
       HttpParser res(head);
+      delete(server);
 
       /*
         3XX错误， 更新 protocol, host, path
       */
       if(res.status_code() / 100 == 3 ){
-        close_socket(server_fd);
         std::string redirect_url = Redirect(res);
         auto redirect_addr = parse_url(redirect_url);
         protocol = std::get<0>(redirect_addr);
@@ -77,14 +101,12 @@ namespace download{
 
       // 404：网址不存在
       if(res.status_code() == 404){
-        close_socket(server_fd);
         throw std::runtime_error("404 Not Found，网址不存在");
       }
 
       // 其他非 200 状态码
       if(res.status_code() != 200){
-        close_socket(server_fd);
-        throw std::runtime_error("服务器返回错误状态码: " + std::to_string(res.status_code()));
+        throw std::runtime_error("服务器返回错误状态码: " + std::to_string(res.status_code()) + " " + res.reason() );
       }
 
       if(res.get("Accept-Ranges") == "bytes" ){}
@@ -92,7 +114,6 @@ namespace download{
         std::cout << "服务器不支持断点续传" << std::endl;
         num_thread = 1;
       } 
-      close_socket(server_fd);
 
       timer.add_always_timer(std::chrono::milliseconds(1000), [this](){ update_speed_loop(); } );
 
@@ -102,9 +123,7 @@ namespace download{
       }
       need_download_size = content_size;
       
-      if(protocol == "https"){
-        ctx_manager = std::make_unique<SSL_CTX_manager>();
-      }
+      
       
       downloader = std::make_unique<download_class>(path, host, port, mtx, cv, file_fd, downloaded_size);
       downloader->set_protocol(protocol, (protocol == "https" ? ctx_manager->get_ctx() : nullptr));
