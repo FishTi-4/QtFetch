@@ -13,6 +13,10 @@ namespace download {
     返回值：无
   */
   SSL_CTX_manager::SSL_CTX_manager() {
+    ctx = create_ctx();
+    if (ctx==nullptr) {
+      throw std::runtime_error("Failed to create SSL_CTX");
+    }
   }
 
   /*
@@ -22,6 +26,10 @@ namespace download {
     返回值：无
   */
   SSL_CTX_manager::~SSL_CTX_manager() {
+    if(ctx!=nullptr) {
+      SSL_CTX_free(ctx);
+      ctx = nullptr;
+    }
   }
 
   /*
@@ -31,7 +39,7 @@ namespace download {
     返回值：SSL_CTX* 上下文指针
   */
   SSL_CTX* SSL_CTX_manager::get_ctx() noexcept {
-    return nullptr;
+    return ctx;
   }
 
   /*
@@ -41,7 +49,17 @@ namespace download {
     返回值：SSL_CTX* 上下文指针
   */
   SSL_CTX* SSL_CTX_manager::create_ctx() {
-    return nullptr;
+    SSL_CTX* new_ctx = SSL_CTX_new(TLS_client_method());
+    if (new_ctx == nullptr){
+      return nullptr;
+    }
+    if(SSL_CTX_set_default_verify_paths(new_ctx) != 1){
+      SSL_CTX_free(new_ctx);
+      throw std::runtime_error("Failed to load default verify paths");
+    }
+    SSL_CTX_set_verify(new_ctx, SSL_VERIFY_PEER, nullptr);
+    return new_ctx;
+
   }
 
   /*
@@ -193,8 +211,15 @@ namespace download {
     返回值：发送字节数
   */
   int tcp_connection::send(const char* buf, size_t n) {//只支持单个封装
-      int ret=::send(socket_fd,buf,n,0);
-      return ret;
+      return ::send(socket_fd, buf, n, 0);
+  }
+
+  int  tcp_connection::send(const char* buf, size_t n, int flag){
+    return ::send(socket_fd, buf, n, flag);
+  }
+  
+  int  tcp_connection::send(int _, const char* buf, size_t n, int flag){
+    return ::send(socket_fd, buf, n, flag);
   }
 
   /*

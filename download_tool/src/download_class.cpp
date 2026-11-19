@@ -133,4 +133,9 @@ namespace download {
     return 0;
   }
 
+  void download_class::set_protocol(std::string protocol, SSL_CTX* ctx){
+    this->protocol = protocol;
+    this->ctx = ctx;
+  }
+
 } // namespace download

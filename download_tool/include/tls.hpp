@@ -41,7 +41,7 @@ protected:
 class tls_connection : public connection {
 public:
 
-  tls_connection(const std::string&host, const std::string&port,SSL_CTX* ctx);
+  tls_connection(const std::string& host, const std::string& port,SSL_CTX* ctx);
   ~tls_connection() override;
 
   int  send(const char* buf, size_t n) override;
@@ -58,10 +58,19 @@ private:
 
 class tcp_connection : public connection {
 public:
-  explicit tcp_connection(const std::string&host, const std::string&port);
+  explicit tcp_connection(const std::string& host, const std::string& port);
   ~tcp_connection() override;
 
   int  send(const char* buf, size_t n) override;
+  /*
+    补充带flag标志位的重载版本
+  */
+  int  send(const char* buf, size_t n, int flag);
+  /*
+    为形式统一的重载版本
+  */
+  int  send(int _, const char* buf, size_t n, int flag);
+
   int  recv(char* buf, size_t n)       override;
   void close_connection()              override;
 
