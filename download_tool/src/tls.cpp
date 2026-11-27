@@ -7,7 +7,6 @@
 namespace download {
 
   /*
-    负责人：
     功能：初始化 SSL_CTX 管理器
     参数：无
     返回值：无
@@ -20,7 +19,6 @@ namespace download {
   }
 
   /*
-    负责人：
     功能：释放 SSL_CTX 资源
     参数：无
     返回值：无
@@ -33,7 +31,6 @@ namespace download {
   }
 
   /*
-    负责人：
     功能：获取 SSL_CTX 指针
     参数：无
     返回值：SSL_CTX* 上下文指针
@@ -43,7 +40,6 @@ namespace download {
   }
 
   /*
-    负责人：
     功能：创建 SSL_CTX
     参数：无
     返回值：SSL_CTX* 上下文指针
@@ -63,7 +59,6 @@ namespace download {
   }
 
   /*
-    负责人：
     功能：析构连接基类
     参数：无
     返回值：无
@@ -102,7 +97,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：建立 TLS 连接
     参数：hostname 主机名、port 端口、ctx SSL 上下文、host 主机名
     返回值：无
@@ -129,7 +123,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：释放 TLS 连接资源
     参数：无
     返回值：无
@@ -139,7 +132,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：通过 TLS 发送数据
     参数：buf 数据缓冲区、n 数据长度
     返回值：发送字节数
@@ -151,7 +143,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：通过 TLS 接收数据
     参数：buf 数据缓冲区、n 缓冲区大小
     返回值：接收字节数
@@ -164,7 +155,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：关闭 TLS 连接
     参数：无
     返回值：无
@@ -182,7 +172,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：建立 TCP 连接
     参数：host主机名，port端口号
     返回值：无
@@ -195,7 +184,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：释放 TCP 连接资源
     参数：无
     返回值：无
@@ -205,7 +193,6 @@ namespace download {
   }
 
   /*
-    负责人：younger-ing
     功能：通过 TCP 发送数据
     参数：buf 数据缓冲区、n 数据长度
     返回值：发送字节数
@@ -223,7 +210,6 @@ namespace download {
   }
 
   /*
-    负责人：youger-ing
     功能：通过 TCP 接收数据
     参数：buf 数据缓冲区、n 缓冲区大小
     返回值：接收字节数
@@ -237,7 +223,6 @@ namespace download {
   }
 
   /*
-    负责人：youger-ing
     功能：关闭 TCP 连接
     参数：无
     返回值：无
